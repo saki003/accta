@@ -141,12 +141,26 @@ const PERCENTILE_LABELS: [string, string][] = [
   ['p998', '99.8%'],
 ];
 
+/** Heuristic: pick a τ regularization strength from preprocess quality.
+ *  Low SNR / blurry studies need stronger regularization to clean up the
+ *  noise floor; clean studies want light regularization to preserve dim
+ *  distal vessel response. */
+function suggestedTau(quality: QualityResult | null): { tau: number; reason: string } | null {
+  if (!quality) return null;
+  const snr = quality.blood_pool_snr;
+  const sharp = quality.sharpness;
+  if (snr < 5 || sharp < 0.30) return { tau: 0.7, reason: `low ${snr < 5 ? 'SNR' : 'sharpness'}` };
+  if (snr < 10 || sharp < 0.50) return { tau: 0.5, reason: 'moderate quality' };
+  return { tau: 0.3, reason: 'clean study' };
+}
+
 const VesselnessBody: React.FC<{
   vesselness: VolumeData | null;
   vesselnessOpacity: number;
   vesselnessThreshold: number;
   vesselnessPercentiles: Record<string, number> | null;
   vesselnessParams: VesselnessParams;
+  quality: QualityResult | null;
   running: boolean;
   onRun: () => void;
   onStop: () => void;
@@ -154,7 +168,7 @@ const VesselnessBody: React.FC<{
   onThresholdChange: (v: number) => void;
   onParamsChange: (p: VesselnessParams) => void;
   onResetParams: () => void;
-}> = ({ vesselness, vesselnessOpacity, vesselnessThreshold, vesselnessPercentiles, vesselnessParams, running, onRun, onStop, onOpacityChange, onThresholdChange, onParamsChange, onResetParams }) => (
+}> = ({ vesselness, vesselnessOpacity, vesselnessThreshold, vesselnessPercentiles, vesselnessParams, quality, running, onRun, onStop, onOpacityChange, onThresholdChange, onParamsChange, onResetParams }) => (
   <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
     <div style={{ display: 'flex', gap: 6 }}>
       <button
@@ -270,6 +284,39 @@ const VesselnessBody: React.FC<{
         </React.Fragment>
       ))}
     </div>
+
+    {/* Suggested τ hint based on preprocess quality metrics */}
+    {(() => {
+      const sug = suggestedTau(quality);
+      if (!sug) return null;
+      const matches = Math.abs(vesselnessParams.tau - sug.tau) < 0.01;
+      return (
+        <div style={{
+          fontSize: 10, padding: '5px 7px', borderRadius: 3,
+          background: matches ? '#0e2a35' : '#1a1a1a',
+          border: `1px solid ${matches ? '#06b6d4' : '#2a2a2a'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6,
+        }}>
+          <span style={{ color: matches ? '#67e8f9' : '#888' }}>
+            Suggested τ: <b style={{ color: matches ? '#67e8f9' : '#aaa' }}>{sug.tau}</b>
+            <span style={{ color: '#666', marginLeft: 4 }}>({sug.reason})</span>
+          </span>
+          {!matches && (
+            <button
+              onClick={() => onParamsChange({ ...vesselnessParams, tau: sug.tau })}
+              style={{
+                fontSize: 9, padding: '2px 8px',
+                background: '#1e3a5f', border: '1px solid #2563eb',
+                borderRadius: 3, color: '#93c5fd', cursor: 'pointer',
+              }}
+            >
+              Apply
+            </button>
+          )}
+        </div>
+      );
+    })()}
+
     <button
       onClick={onResetParams}
       style={{
@@ -1350,6 +1397,7 @@ const Session: React.FC<Props> = ({ study, onBack }) => {
                         vesselnessThreshold={vesselnessThreshold}
                         vesselnessPercentiles={vesselnessPercentiles}
                         vesselnessParams={vesselnessParams}
+                        quality={quality}
                         running={runningVesselness}
                         onRun={() => void handleRunVesselness()}
                         onStop={() => void cancelStep(study.uid, 'vesselness')}
