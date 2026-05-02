@@ -17,6 +17,7 @@ def frangi_vesselness(
     c: float = 500.0,
     roi_mask: np.ndarray | None = None,
     cancel_ev=None,  # threading.Event — checked between sigma scales for cancellation
+    tau: float = 0.5,
 ) -> tuple[sitk.Image, sitk.Image, sitk.Image]:
     """Multi-scale Frangi vesselness filter for bright tubular structures.
 
@@ -120,15 +121,28 @@ def frangi_vesselness(
 
         valid = (l2 < 0.0) & (l3 < 0.0)
 
-        abs_l3        = np.abs(l3)
-        abs_l2l3_sqrt = np.sqrt(np.abs(l2) * np.abs(l3))
-        safe = valid & (abs_l3 > 1e-10) & (abs_l2l3_sqrt > 1e-10)
+        abs_l2 = np.abs(l2)
+        abs_l3 = np.abs(l3)
 
-        safe_l3   = np.where(abs_l3 > 1e-10, abs_l3, 1.0)
+        # ── λ₃ regularization (Cui et al. 2019, eq. 20) ────────────────
+        # Voxels with |λ₃| smaller than τ·max|λ₃| (noisy / low-contrast)
+        # have their value clamped UP to τ·max|λ₃|.  This prevents the
+        # Ra=|λ₂|/|λ₃| ratio from blowing up in low-signal regions and
+        # also caps the dynamic range so calcium-driven extreme |λ₃|
+        # don't dominate the scale.
+        # Outside-ROI voxels are zero in abs_l3 (eigendecomposition was skipped),
+        # so the global max equals the ROI max — no need to mask explicitly.
+        max_abs_l3 = float(abs_l3.max()) if abs_l3.size > 0 else 0.0
+        threshold = tau * max_abs_l3 if max_abs_l3 > 0 else 0.0
+        abs_l3_reg    = np.maximum(abs_l3, threshold)
+        abs_l2l3_sqrt = np.sqrt(abs_l2 * abs_l3_reg)
+        safe = valid & (abs_l3_reg > 1e-10) & (abs_l2l3_sqrt > 1e-10)
+
+        safe_l3   = np.where(abs_l3_reg > 1e-10, abs_l3_reg, 1.0)
         safe_l2l3 = np.where(abs_l2l3_sqrt > 1e-10, abs_l2l3_sqrt, 1.0)
-        Ra = np.where(safe, np.abs(l2) / safe_l3,   0.0)
+        Ra = np.where(safe, abs_l2 / safe_l3,   0.0)
         Rb = np.where(safe, np.abs(l1) / safe_l2l3, 0.0)
-        S2 = l1 ** 2 + l2 ** 2 + l3 ** 2
+        S2 = l1 ** 2 + l2 ** 2 + l3 ** 2  # raw λ — no regularization here
 
         V: np.ndarray = np.where(
             safe,

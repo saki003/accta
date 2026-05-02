@@ -250,6 +250,7 @@ const VesselnessBody: React.FC<{
           ['α',      'alpha',       0.1, 2,    0.05],
           ['β',      'beta',        0.1, 2,    0.05],
           ['c',      'c',           50,  2000, 50  ],
+          ['τ',      'tau',         0.0, 1.0,  0.05],
         ] as [string, keyof VesselnessParams, number, number, number][]
       ).map(([label, key, min, max, step]) => (
         <React.Fragment key={key}>

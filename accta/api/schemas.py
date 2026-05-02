@@ -116,6 +116,7 @@ class VesselnessRequest(BaseModel):
     alpha: float = Field(0.5, description="Plate-vs-vessel sensitivity (Ra term)")
     beta: float = Field(0.5, description="Blob-vs-vessel sensitivity (Rb term)")
     c: float = Field(500.0, description="Frobenius-norm background suppression threshold")
+    tau: float = Field(0.5, description="λ₃ regularization cutoff in [0,1] — clamps low |λ₃| up to τ·max|λ₃| to stabilize Frangi in low-contrast regions (Cui et al. 2019)")
 
 
 # ---------------------------------------------------------------------------

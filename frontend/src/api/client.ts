@@ -198,6 +198,7 @@ export interface VesselnessParams {
   alpha: number;
   beta: number;
   c: number;
+  tau: number;
 }
 
 export const DEFAULT_VESSELNESS_PARAMS: VesselnessParams = {
@@ -207,6 +208,7 @@ export const DEFAULT_VESSELNESS_PARAMS: VesselnessParams = {
   alpha: 0.5,
   beta: 0.5,
   c: 100.0,
+  tau: 0.5,
 };
 
 /**

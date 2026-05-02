@@ -15,7 +15,7 @@ from accta.api.config import DATA_DIR, pipeline_dir, study_dir
 
 logger = logging.getLogger(__name__)
 
-_PIPELINE_VERSION = "5"
+_PIPELINE_VERSION = "6"
 
 
 # ---------------------------------------------------------------------------

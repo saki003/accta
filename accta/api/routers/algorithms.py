@@ -267,6 +267,7 @@ def _run_vesselness(entry: dict[str, Any], params: VesselnessRequest, cancel_ev:
         alpha=params.alpha,
         beta=params.beta,
         c=params.c,
+        tau=params.tau,
         roi_mask=cardiac_roi,
         cancel_ev=cancel_ev,
     )
