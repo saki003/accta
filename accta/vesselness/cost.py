@@ -21,6 +21,8 @@ def build_cost_image(
     w2: float = 0.15,
     w3: float = 0.15,
     w4: float = 0.20,
+    w5: float = 0.30,
+    calcium_threshold: float = 900.0,
     outside_roi_penalty: float = 1.0e6,
     chamber_erosion_iters: int = 2,
     wall_dilation_iters: int = 4,
@@ -29,13 +31,14 @@ def build_cost_image(
 
     Cost function
     -------------
-    cost = w1·t1  +  w2·t2  +  w3·t3  +  w4·t4   (inside ROI)
-           outside_roi_penalty                       (outside ROI — hard barrier)
+    cost = w1·t1 + w2·t2 + w3·t3 + w4·t4 + w5·t5   (inside ROI)
+           outside_roi_penalty                          (outside ROI — hard barrier)
 
-    t1 — inverse vesselness:   1 − vesselness          → [0, 1]
-    t2 — HU distance:          1 − HU_likelihood        → [0, 1]
-    t3 — curvature penalty:    orientation + scale      → [0, 1]
-    t4 — leakage penalty:      near chambers / walls    → {0, 1}
+    t1 — inverse vesselness:   1 − vesselness                  → [0, 1]
+    t2 — HU distance:          1 − HU_likelihood                → [0, 1]
+    t3 — curvature penalty:    orientation + scale              → [0, 1]
+    t4 — leakage penalty:      near chambers / walls            → {0, ..., 1}
+    t5 — calcium penalty:      HU > calcium_threshold           → {0, 1}
 
     Parameters
     ----------
@@ -57,8 +60,15 @@ def build_cost_image(
         HU likelihood Gaussian width.
     sigma_min / sigma_max:
         Frangi scale range used, for scale normalisation.
-    w1–w4:
-        Term weights for in-ROI cost; should sum to ~1.0 (not enforced).
+    w1–w5:
+        Term weights for in-ROI cost.  w1–w4 sum to ~1.0; w5 is added on top
+        as an explicit calcium repulsion that pushes calcified voxels above
+        the typical lumen cost so Dijkstra routes around dense plaque.
+    calcium_threshold:
+        HU above which a voxel is considered dense calcium.  Default 900 HU
+        is conservative — pure cortical bone and dense plaque only; mild
+        calcification (400–800 HU) is left to the HU-likelihood term to
+        handle so coronary lumen near soft plaque isn't repelled.
     outside_roi_penalty:
         Cost assigned to every voxel outside the cardiac ROI (hard barrier).
     chamber_erosion_iters:
@@ -123,13 +133,24 @@ def build_cost_image(
             t4[wall_shell] = np.maximum(t4[wall_shell], 0.6)
 
     # ------------------------------------------------------------------
-    # Combine in-ROI terms (t1–t4 only); outside-ROI is handled separately
+    # t5 — dense calcium repulsion (HU > calcium_threshold)
+    # ------------------------------------------------------------------
+    # Calcified plaques produce strong Frangi response (locally bright, roughly
+    # tubular at small scales) which drops their t1 toward 0, making them look
+    # cheaper than actual lumen.  Without this term the path hops plaque-to-
+    # plaque.  Adding w5·1.0 = 0.30 to calcium voxels makes them firmly more
+    # expensive than typical lumen (~0.30), so Dijkstra routes around them.
+    t5 = (hu_arr > calcium_threshold).astype(np.float32)
+
+    # ------------------------------------------------------------------
+    # Combine in-ROI terms; outside-ROI is handled separately
     # ------------------------------------------------------------------
     cost = (
         w1 * t1
         + w2 * t2
         + w3 * t3
         + w4 * t4
+        + w5 * t5
     ).astype(np.float32)
 
     # Hard barrier outside the cardiac ROI — the pathfinder must never route
