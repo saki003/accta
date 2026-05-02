@@ -1,0 +1,58 @@
+# ── Python ──────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.tox/
+.coverage
+htmlcov/
+
+# Virtual envs (huge)
+.venv/
+venv/
+env/
+
+# ── Node / frontend ────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+node_modules/
+dist/
+*.log
+npm-debug.log*
+
+# ── User workspace data (DICOM derivatives, NIfTI, masks) ──────────
+# Default workspace: ~/.accta/data and ~/Documents/accta/studies
+# Inside the repo, ignore any local cache/output folders too:
+data/
+cache/
+*.nii
+*.nii.gz
+*.dcm
+*.npy
+*.mhd
+*.raw
+session.json
+study.json
+
+# ── macOS / editor cruft ───────────────────────────────────────────
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── Project-local config / runtime ─────────────────────────────────
+.claude/
+.aider*
+
+# ── Build artifacts ────────────────────────────────────────────────
+build/
+*.tsbuildinfo

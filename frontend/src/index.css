@@ -1,0 +1,678 @@
+/* ============================================================
+   accta Coronary CTA Viewer — Slicer-inspired dark theme
+   ============================================================
+   Panel colors sourced from vtkMRMLLayoutLogic.cxx:
+     Axial        #F34A33  (Red slice)
+     Curved MPR   #6EB04B  (Green slice)
+     Cross-section #EDD54C (Yellow slice)
+     3D MIP       #4A90D9  (3D view)
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: #1c1c1c;
+  color: #d4d4d4;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 12px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   Viewer grid — template set dynamically in Viewer.tsx
+   ============================================================ */
+.viewer-grid {
+  display: grid;
+  width: 100%;
+  /* height is controlled by flex: 1 in Viewer.tsx */
+  gap: 3px;
+  background: #111;
+  padding: 3px;
+  min-height: 0;
+}
+
+/* ============================================================
+   Panel chrome
+   ============================================================ */
+.panel {
+  position: relative;
+  background: #252525;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+}
+
+/* Slicer-style 3px colored top bar on every panel */
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 20;
+  border-radius: 2px 2px 0 0;
+}
+
+/* Slicer canonical view colors */
+.panel-axial::before     { background: #F34A33; }
+.panel-curved::before    { background: #6EB04B; }
+.panel-crosssect::before { background: #EDD54C; }
+.panel-mip::before       { background: #4A90D9; }
+.panel-coronal::before   { background: #6EB04B; }
+.panel-sagittal::before  { background: #EDD54C; }
+
+/* Panel labels — colored to match their panel */
+.panel-label {
+  position: absolute;
+  top: 8px;     /* sits just below the 3px colored bar */
+  left: 8px;
+  font-size: 9px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  pointer-events: none;
+  z-index: 10;
+  user-select: none;
+  /* slight shadow so text is readable over images */
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+.panel-axial     .panel-label { color: #F34A33; }
+.panel-curved    .panel-label { color: #6EB04B; }
+.panel-crosssect .panel-label { color: #EDD54C; }
+.panel-mip       .panel-label { color: #4A90D9; }
+.panel-coronal   .panel-label { color: #6EB04B; }
+.panel-sagittal  .panel-label { color: #EDD54C; }
+
+/* ============================================================
+   Toolbar
+   ============================================================ */
+.toolbar {
+  height: 34px;
+  background: #161616;
+  border-bottom: 1px solid #1e1e1e;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 8px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: visible;
+  white-space: nowrap;
+}
+
+.toolbar-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e0e0e0;
+  letter-spacing: 0.03em;
+  margin-right: 4px;
+  flex-shrink: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.toolbar-sep {
+  width: 1px;
+  height: 16px;
+  background: #2a2a2a;
+  flex-shrink: 0;
+  margin: 0 3px;
+}
+
+.toolbar button {
+  padding: 2px 7px;
+  font-size: 11px;
+}
+
+.toolbar select {
+  font-size: 11px;
+  padding: 2px 4px;
+}
+
+.toolbar-group-label {
+  font-size: 9px;
+  color: #505050;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ============================================================
+   Buttons — Slicer-style flat dark buttons
+   ============================================================ */
+button {
+  background: #2e2e2e;
+  color: #c8c8c8;
+  border: 1px solid #444;
+  border-radius: 3px;
+  padding: 3px 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+
+button:hover {
+  background: #3c3c3c;
+  color: #fff;
+  border-color: #555;
+}
+
+button.active {
+  background: #1a3a50;
+  border-color: #2980b9;
+  color: #5ab3f0;
+}
+
+button:active {
+  background: #1e4d6b;
+  border-color: #2980b9;
+  color: #fff;
+}
+
+button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Layout switcher buttons — styled like Slicer's layout icons */
+.btn-layout {
+  padding: 3px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-color: #404040;
+}
+
+.btn-layout.active {
+  background: #1a3a50;
+  border-color: #2980b9;
+  color: #5ab3f0;
+}
+
+/* ============================================================
+   Select / dropdown
+   ============================================================ */
+select {
+  background: #2e2e2e;
+  color: #c8c8c8;
+  border: 1px solid #444;
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+  max-width: 160px;
+}
+
+select:focus {
+  outline: none;
+  border-color: #2980b9;
+}
+
+/* ============================================================
+   Scrollbars (WebKit)
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #585858;
+}
+
+/* ============================================================
+   Upload / modal overlay
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: #222;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  padding: 22px;
+  min-width: 360px;
+  max-width: 520px;
+  width: 90%;
+}
+
+.modal-box h2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ddd;
+  margin-bottom: 14px;
+  letter-spacing: 0.03em;
+}
+
+/* ============================================================
+   Drag-and-drop zone
+   ============================================================ */
+.drop-zone {
+  border: 2px dashed #444;
+  border-radius: 5px;
+  padding: 26px 16px;
+  text-align: center;
+  color: #777;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.drop-zone:hover,
+.drop-zone.drag-over {
+  border-color: #2980b9;
+  color: #aaa;
+  background: rgba(41, 128, 185, 0.05);
+}
+
+/* ============================================================
+   Study list
+   ============================================================ */
+.study-list {
+  list-style: none;
+  margin-top: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.study-list li {
+  padding: 5px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #bbb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.study-list li:hover {
+  background: #2e2e2e;
+  color: #eee;
+}
+
+.study-list li.selected {
+  background: #1a3a50;
+  color: #5ab3f0;
+}
+
+/* ============================================================
+   Spinner
+   ============================================================ */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #3a3a3a;
+  border-top-color: #2980b9;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+/* ============================================================
+   Canvas / viewport container inside each panel
+   ============================================================ */
+.cs-viewport {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ============================================================
+   Placeholder text
+   ============================================================ */
+.panel-placeholder {
+  color: #3a3a3a;
+  font-size: 11px;
+  text-align: center;
+  padding: 16px;
+  user-select: none;
+}
+
+/* ============================================================
+   WL/WW info badge
+   ============================================================ */
+.wlww-badge {
+  font-size: 10px;
+  color: #585858;
+  font-family: 'Courier New', Courier, monospace;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Browse modal — Slicer DICOM browser style
+   ============================================================ */
+.browse-modal {
+  background: #1e1e1e;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  width: 88vw;
+  max-width: 1100px;
+  height: min(78vh, 700px);
+  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.browse-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid #2a2a2a;
+  flex-shrink: 0;
+  background: #1a1a1a;
+}
+
+.browse-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #d0d0d0;
+  letter-spacing: 0.03em;
+}
+
+.browse-close {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 14px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.browse-close:hover { color: #fff; background: #333; }
+
+.browse-pathbar {
+  display: flex;
+  gap: 6px;
+  padding: 7px 12px;
+  border-bottom: 1px solid #222;
+  flex-shrink: 0;
+  background: #1c1c1c;
+}
+
+.browse-path-input {
+  flex: 1;
+  background: #141414;
+  border: 1px solid #3a3a3a;
+  border-radius: 3px;
+  color: #ccc;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  padding: 4px 8px;
+  outline: none;
+}
+
+.browse-path-input:focus { border-color: #2980b9; }
+
+.browse-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.browse-folders {
+  width: 240px;
+  flex-shrink: 0;
+  border-right: 1px solid #2a2a2a;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.browse-series {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.browse-panel-header {
+  padding: 6px 12px;
+  font-size: 9px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid #222;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #1c1c1c;
+}
+
+.browse-panel-header em {
+  font-style: normal;
+  color: #aaa;
+}
+
+.browse-count {
+  background: #333;
+  color: #777;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 9px;
+}
+
+.browse-list {
+  list-style: none;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.browse-folder-item {
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #bbb;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid #1e1e1e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.browse-folder-item:hover { background: #2a2a2a; color: #eee; }
+.browse-folder-item.selected { background: #1a3a50; color: #5ab3f0; }
+.browse-folder-item.dimmed { color: #484848; }
+
+.folder-icon { flex-shrink: 0; }
+
+.browse-empty {
+  color: #484848;
+  font-size: 11px;
+  padding: 16px 12px;
+  font-style: italic;
+}
+
+.browse-loading {
+  color: #585858;
+  font-size: 11px;
+  padding: 16px 12px;
+}
+
+.browse-error {
+  color: #c0392b;
+  font-size: 11px;
+  padding: 8px 12px;
+}
+
+/* Series table */
+.series-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  overflow-y: auto;
+  display: block;
+  flex: 1;
+}
+
+.series-table thead {
+  position: sticky;
+  top: 0;
+  background: #1e1e1e;
+  z-index: 1;
+}
+
+.series-table th {
+  padding: 6px 10px;
+  text-align: left;
+  color: #585858;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 9px;
+  border-bottom: 1px solid #2a2a2a;
+  white-space: nowrap;
+}
+
+.series-row {
+  cursor: pointer;
+  border-bottom: 1px solid #1e1e1e;
+}
+
+.series-row td {
+  padding: 7px 10px;
+  color: #bbb;
+  white-space: nowrap;
+}
+
+.series-row:hover td { background: #2a2a2a; color: #eee; }
+.series-row.selected td { background: #1a3a50; color: #5ab3f0; }
+.series-row.series-dim td { color: #484848; }
+.series-row.series-dim:hover td { color: #777; }
+
+.mono { font-family: 'Courier New', Courier, monospace; }
+.dimmed { color: #484848 !important; }
+
+/* Browse footer */
+.browse-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-top: 1px solid #2a2a2a;
+  flex-shrink: 0;
+  background: #1a1a1a;
+}
+
+.browse-selection {
+  font-size: 11px;
+  color: #777;
+}
+
+.browse-selection strong { color: #aaa; }
+
+.btn-primary {
+  background: #1a3a50 !important;
+  border-color: #2980b9 !important;
+  color: #5ab3f0 !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2980b9 !important;
+  color: #fff !important;
+}
+
+/* ============================================================
+   Centerline slider
+   ============================================================ */
+.cs-slider {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 10;
+}
+
+.cs-slider input[type='range'] {
+  width: 100%;
+  accent-color: #EDD54C;
+  cursor: pointer;
+}
+
+/* ============================================================
+   Dual-handle HU clip range slider
+   ============================================================ */
+.hu-range input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+.hu-range input[type='range']::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 4px;
+}
+.hu-range input[type='range']::-moz-range-track {
+  background: transparent;
+  height: 4px;
+}
+.hu-range input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 2px solid #111;
+  margin-top: -4px;
+}
+.hu-range input[type='range']::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 2px solid #111;
+}
